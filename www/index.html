@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ملاحظاتي</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', Tahoma, Arial;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  padding: 20px;
+  color: white;
+}
+.container {
+  max-width: 500px;
+  margin: 0 auto;
+}
+.header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+.header h1 {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+.counter {
+  background: rgba(255,255,255,0.2);
+  padding: 8px 20px;
+  border-radius: 20px;
+  display: inline-block;
+  font-size: 14px;
+}
+.card {
+  background: rgba(255,255,255,0.95);
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 20px;
+  color: #333;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+.input-group {
+  margin-bottom: 15px;
+}
+.input-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #667eea;
+}
+input[type="text"], textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: inherit;
+  transition: border 0.3s;
+}
+input[type="text"]:focus, textarea:focus {
+  outline: none;
+  border-color: #667eea;
+}
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+.btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 10px;
+}
+.btn-add {
+  background: #667eea;
+  color: white;
+}
+.btn-export {
+  background: #4facfe;
+  color: white;
+}
+.btn:active {
+  transform: scale(0.98);
+}
+.note {
+  background: #f9f9f9;
+  border-right: 4px solid #667eea;
+  padding: 15px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  position: relative;
+}
+.note-title {
+  font-weight: bold;
+  color: #667eea;
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+.note-content {
+  color: #555;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+.note-date {
+  font-size: 12px;
+  color: #999;
+  margin-top: 8px;
+}
+.note-delete {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+}
+.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+}
+.empty-icon {
+  font-size: 60px;
+  margin-bottom: 15px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>📝 ملاحظاتي</h1>
+    <div class="counter" id="counter">0 ملاحظة</div>
+  </div>
+
+  <div class="card">
+    <div class="input-group">
+      <label>عنوان الملاحظة:</label>
+      <input type="text" id="noteTitle" placeholder="مثال: قائمة التسوق">
+    </div>
+    <div class="input-group">
+      <label>المحتوى:</label>
+      <textarea id="noteContent" placeholder="اكتب ملاحظتك هنا..."></textarea>
+    </div>
+    <button class="btn btn-add" onclick="addNote()">➕ إضافة ملاحظة</button>
+    <button class="btn btn-export" onclick="exportNotes()">📥 تصدير جميع الملاحظات</button>
+  </div>
+
+  <div id="notesList"></div>
+</div>
+
+<script>
+let notes = [];
+
+// تحميل الملاحظات من الهاتف عند بدء التطبيق
+function loadNotes() {
+  const saved = localStorage.getItem('my_notes');
+  if (saved) {
+    try {
+      notes = JSON.parse(saved);
+    } catch (e) {
+      notes = [];
+    }
+  }
+  renderNotes();
+}
+
+// حفظ الملاحظات في الهاتف
+function saveNotes() {
+  localStorage.setItem('my_notes', JSON.stringify(notes));
+}
+
+// إضافة ملاحظة جديدة
+function addNote() {
+  const title = document.getElementById('noteTitle').value.trim();
+  const content = document.getElementById('noteContent').value.trim();
+
+  if (!title || !content) {
+    alert('اكتب العنوان والمحتوى أولاً');
+    return;
+  }
+
+  const note = {
+    id: Date.now(),
+    title: title,
+    content: content,
+    date: new Date().toLocaleString('ar-EG')
+  };
+
+  notes.unshift(note);
+  saveNotes();
+  renderNotes();
+
+  // تنظيف الحقول
+  document.getElementById('noteTitle').value = '';
+  document.getElementById('noteContent').value = '';
+
+  // اهتزاز خفيف للتأكيد
+  if (navigator.vibrate) navigator.vibrate(50);
+}
+
+// حذف ملاحظة
+function deleteNote(id) {
+  if (!confirm('حذف هذه الملاحظة؟')) return;
+  notes = notes.filter(n => n.id !== id);
+  saveNotes();
+  renderNotes();
+}
+
+// عرض الملاحظات
+function renderNotes() {
+  const list = document.getElementById('notesList');
+  const counter = document.getElementById('counter');
+  
+  counter.textContent = notes.length + ' ملاحظة';
+
+  if (notes.length === 0) {
+    list.innerHTML = `
+      <div class="card">
+        <div class="empty">
+          <div class="empty-icon">📭</div>
+          <p>لا توجد ملاحظات بعد</p>
+          <p style="font-size:13px;margin-top:10px">ابدأ بإضافة أول ملاحظة!</p>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  list.innerHTML = notes.map(note => `
+    <div class="note">
+      <button class="note-delete" onclick="deleteNote(${note.id})">×</button>
+      <div class="note-title">${escapeHtml(note.title)}</div>
+      <div class="note-content">${escapeHtml(note.content)}</div>
+      <div class="note-date">📅 ${note.date}</div>
+    </div>
+  `).join('');
+}
+
+// تصدير الملاحظات كملف
+function exportNotes() {
+  if (notes.length === 0) {
+    alert('لا توجد ملاحظات للتصدير');
+    return;
+  }
+
+  let text = '📝 ملاحظاتي\n';
+  text += '================\n\n';
+  
+  notes.forEach((note, i) => {
+    text += `[${i + 1}] ${note.title}\n`;
+    text += `التاريخ: ${note.date}\n`;
+    text += `${note.content}\n`;
+    text += '----------------\n\n';
+  });
+
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'ملاحظاتي-' + new Date().toISOString().split('T')[0] + '.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// حماية من HTML
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// بدء التطبيق
+loadNotes();
+</script>
+</body>
+</html>
